@@ -20,41 +20,106 @@
 <canvas id="game"></canvas>
 
 <script>
+<script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  updateArena();
 }
 window.addEventListener("resize", resize);
 resize();
 
 // Arena
-let center, radius;
+let center = { x: 0, y: 0 };
+let radius = 0;
 
 function updateArena() {
   center = { x: canvas.width / 2, y: canvas.height / 2 };
   radius = Math.min(canvas.width, canvas.height) * 0.35;
 }
 
-updateArena();
+// Balls (flags later)
+const BALL_COUNT = 20;
+const balls = [];
 
-// Draw loop
+function random(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+for (let i = 0; i < BALL_COUNT; i++) {
+  const angle = random(0, Math.PI * 2);
+  const r = random(0, radius * 0.8);
+  balls.push({
+    x: center.x + Math.cos(angle) * r,
+    y: center.y + Math.sin(angle) * r,
+    vx: random(-2, 2),
+    vy: random(-2, 2),
+    size: 10,
+    color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+    alive: true
+  });
+}
+
+// Physics
+function update() {
+  for (const b of balls) {
+    if (!b.alive) continue;
+
+    b.x += b.vx;
+    b.y += b.vy;
+
+    // Bounce inside circle
+    const dx = b.x - center.x;
+    const dy = b.y - center.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist + b.size > radius) {
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const dot = b.vx * nx + b.vy * ny;
+      b.vx -= 2 * dot * nx;
+      b.vy -= 2 * dot * ny;
+
+      // push back inside
+      b.x = center.x + nx * (radius - b.size);
+      b.y = center.y + ny * (radius - b.size);
+    }
+  }
+}
+
+// Draw
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Arena circle
+  // Arena
   ctx.lineWidth = 8;
   ctx.strokeStyle = "#4fc3ff";
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
   ctx.stroke();
 
-  requestAnimationFrame(draw);
+  // Balls
+  for (const b of balls) {
+    if (!b.alive) continue;
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
-draw();
+// Loop
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+
 </script>
 
 </body>
