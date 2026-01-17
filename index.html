@@ -1,26 +1,61 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Flag Survival Game</title>
-  <style>
-    body {
-      margin: 0;
-      background: #0b0f1a;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-    }
-    h1 {
-      font-size: 48px;
-      letter-spacing: 2px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Flag Survival Game</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #0b0f1a;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+  }
+</style>
 </head>
 <body>
-  <h1>FLAG SURVIVAL GAME — LOADING...</h1>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+// Arena
+let center, radius;
+
+function updateArena() {
+  center = { x: canvas.width / 2, y: canvas.height / 2 };
+  radius = Math.min(canvas.width, canvas.height) * 0.35;
+}
+
+updateArena();
+
+// Draw loop
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Arena circle
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = "#4fc3ff";
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
 </body>
 </html>
