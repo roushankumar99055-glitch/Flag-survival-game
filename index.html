@@ -20,6 +20,7 @@
 <canvas id="game"></canvas>
 
 <script>
+  
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -33,7 +34,7 @@ resize();
 // Arena
 let center={x:0,y:0}, radius=0;
 let gapAngle = 0;
-const GAP_SIZE = Math.PI/5;
+const GAP_SIZE = Math.PI/6;
 
 function updateArena(){
   center.x = canvas.width/2;
@@ -41,7 +42,7 @@ function updateArena(){
   radius = Math.min(canvas.width,canvas.height)*0.35;
 }
 
-// Flags (balls)
+// Flags
 const flags=[];
 const TOTAL=40;
 
@@ -56,27 +57,36 @@ function spawnFlags(){
       vx:(Math.random()-0.5)*4,
       vy:(Math.random()-0.5)*4,
       size:7,
-      color:`hsl(${Math.random()*360},80%,60%)`,
-      inside:true
+      escaped:false
     });
   }
 }
 updateArena();
 spawnFlags();
 
+// Helpers
+function angleDiff(a,b){
+  let d = a - b;
+  while(d>Math.PI) d-=Math.PI*2;
+  while(d<-Math.PI) d+=Math.PI*2;
+  return d;
+}
+
 // Physics
 function update(){
-  gapAngle += 0.008;
+  gapAngle += 0.01;
 
   for(const f of flags){
-    f.vy += 0.15; // gravity
 
+    f.vy += 0.2; // gravity
     f.x += f.vx;
     f.y += f.vy;
 
     // screen walls
     if(f.x<f.size){f.x=f.size;f.vx*=-0.7;}
     if(f.x>canvas.width-f.size){f.x=canvas.width-f.size;f.vx*=-0.7;}
+
+    // floor pile
     if(f.y>canvas.height-f.size){
       f.y=canvas.height-f.size;
       f.vx*=0.9;
@@ -87,23 +97,21 @@ function update(){
     const dy=f.y-center.y;
     const dist=Math.hypot(dx,dy);
 
-    if(dist<radius){
-      f.inside=true;
-    }
-
-    if(dist+f.size>radius){
+    if(!f.escaped && dist+f.size>=radius){
       const ang=Math.atan2(dy,dx);
-      let diff=(ang-gapAngle+Math.PI*3)%(Math.PI*2);
+      const diff=Math.abs(angleDiff(ang,gapAngle));
 
-      if(diff>GAP_SIZE){
+      if(diff < GAP_SIZE/2){
+        // allowed to escape
+        f.escaped = true;
+      }else{
+        // bounce from wall
         const nx=dx/dist, ny=dy/dist;
         const dot=f.vx*nx+f.vy*ny;
         f.vx-=2*dot*nx;
         f.vy-=2*dot*ny;
         f.x=center.x+nx*(radius-f.size);
         f.y=center.y+ny*(radius-f.size);
-      }else{
-        f.inside=false; // escaped
       }
     }
   }
@@ -113,15 +121,15 @@ function update(){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // arena with gap
+  // arena
   ctx.lineWidth=7;
   ctx.strokeStyle="#4fc3ff";
   ctx.beginPath();
-  ctx.arc(center.x,center.y,radius,gapAngle+GAP_SIZE,gapAngle+Math.PI*2);
+  ctx.arc(center.x,center.y,radius,gapAngle+GAP_SIZE/2,gapAngle+Math.PI*2-GAP_SIZE/2);
   ctx.stroke();
 
   for(const f of flags){
-    ctx.fillStyle=f.color;
+    ctx.fillStyle=f.escaped?"#888":"hsl(200,80%,60%)";
     ctx.beginPath();
     ctx.arc(f.x,f.y,f.size,0,Math.PI*2);
     ctx.fill();
@@ -136,7 +144,7 @@ function loop(){
   requestAnimationFrame(loop);
 }
 loop();
-
+  
 </script>
 
 </body>
